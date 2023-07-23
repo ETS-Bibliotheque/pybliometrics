@@ -2,8 +2,8 @@ import configparser
 from collections import deque
 from pathlib import Path
 
-from pybliometrics.scopus.utils.constants import CONFIG_FILE, RATELIMITS
-from pybliometrics.scopus.utils.create_config import create_config
+from pybliometrics.utils.constants import CONFIG_FILE, RATELIMITS
+from pybliometrics.utils.create_config import create_config
 
 # Read/create config file (with fixture for RTFD.io)
 config = configparser.ConfigParser()

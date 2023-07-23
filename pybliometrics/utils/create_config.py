@@ -13,7 +13,7 @@ def create_config(keys: Optional[List[str]] = None,
     :param insttoken: An InstToken to be used alongside the key(s).  Will only
                       be used if `keys` is not empty.
     """
-    from pybliometrics.scopus.utils.constants import CONFIG_FILE, DEFAULT_PATHS
+    from pybliometrics.utils.constants import CONFIG_FILE, DEFAULT_PATHS
 
     config = configparser.ConfigParser()
     config.optionxform = str

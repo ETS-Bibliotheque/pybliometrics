@@ -2,8 +2,8 @@
 
 from typing import Union
 
-from pybliometrics.scopus.superclasses import Base
-from pybliometrics.scopus.utils import get_folder, URLS
+from pybliometrics.superclasses import Base
+from pybliometrics.utils import get_folder, URLS
 
 
 class Retrieval(Base):

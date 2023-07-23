@@ -1,0 +1,45 @@
+"""Superclass to access all SciVal lookup APIs and dump the results."""
+
+from typing import Union, Literal
+
+from pybliometrics.superclasses import Base
+from pybliometrics.utils import get_folder, URLS
+
+
+class Lookup(Base):
+    def __init__(self,
+                 api: Literal["AuthorLookup", "CountryLookup", "CountryGroupLookup", "InstitutionLookup", "InstitutionGroupLookup", "PublicationLookup", "ScopusSourceLookup", "SubjectAreaLookup", "TopicLookup", "TopicClusterLookup", "WorldLookup"],
+                 identifier: Union[int, str] = None,
+                 complement: str = "",
+                 **kwds: str
+                 ) -> None:
+        """Class intended as superclass to perform retrievals.
+
+        :param api: The name of the Scopus API to be accessed.  Allowed values:
+                    AuthorLookup, CountryLookup, CountryGroupLookup,
+                    InstitutionLookup, InstitutionGroupLookup, PublicationLookup,
+                    ScopusSourceLookup, SubjectAreaLookup, TopicLookup,
+                    TopicClusterLookup, WorldLookup.
+        :param identifier: The ID to look for.
+        :param complement: The URL complement that launches the correct getter 
+            from the selected Lookup API.
+        :param kwds: Keywords passed on to requests header.  Must contain
+                     fields and values specified in the respective
+                     API specification.
+
+        Raises
+        ------
+        KeyError
+            If parameter `api` is not one of the allowed values.
+        """
+        # Construct URL and cache file name
+        url = URLS[api] + complement
+        if identifier != None:
+            url += "/" + identifier
+
+        self._view = "UniqueView"
+        self._cache_file_path = get_folder(api, self._view)
+
+        # Parse file contents
+        params = {'view': self._view, **kwds}
+        Base.__init__(self, params=params, url=url, api=api)

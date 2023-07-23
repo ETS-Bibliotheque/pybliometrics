@@ -6,7 +6,7 @@ from time import localtime, strftime, time
 from typing import Dict, Optional
 
 from pybliometrics.scopus.exception import ScopusQueryError
-from pybliometrics.scopus.utils import get_content, SEARCH_MAX_ENTRIES
+from pybliometrics.utils import get_content, SEARCH_MAX_ENTRIES
 from tqdm import tqdm
 
 

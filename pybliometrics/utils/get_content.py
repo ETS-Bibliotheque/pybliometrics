@@ -4,7 +4,7 @@ from urllib3.util import Retry
 
 from pybliometrics import __version__
 from pybliometrics.scopus import exception
-from pybliometrics.scopus.utils.startup import config
+from pybliometrics.utils.startup import config
 
 # Define user agent string for HTTP requests
 user_agent = 'pybliometrics-v' + __version__
@@ -58,7 +58,7 @@ def get_content(url, api, params=None, **kwds):
     from random import shuffle
     from time import sleep, time
 
-    from pybliometrics.scopus.utils.startup import _throttling_params, KEYS
+    from pybliometrics.utils.startup import _throttling_params, KEYS
 
     # Set header, params and proxy
     try:
@@ -163,8 +163,8 @@ def get_folder(api, view):
     from configparser import NoOptionError
     from pathlib import Path
 
-    from pybliometrics.scopus.utils import CONFIG_FILE, DEFAULT_PATHS
-    from pybliometrics.scopus.utils.create_config import create_config
+    from pybliometrics.utils import CONFIG_FILE, DEFAULT_PATHS
+    from pybliometrics.utils.create_config import create_config
 
     if not config.has_section('Directories'):
         create_config()
