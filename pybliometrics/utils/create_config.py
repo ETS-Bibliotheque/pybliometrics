@@ -24,25 +24,28 @@ def create_config(keys: Optional[List[str]] = None,
     for api, path in DEFAULT_PATHS.items():
         config.set('Directories', api, str(path))
 
-    # Set authentication
-    config.add_section('Authentication')
+    # Set authentication for Scopus and SciVal
+    section_name='Authentication'
+    config.add_section(section_name)
     if keys:
         if not isinstance(keys, list):
             raise ValueError("Parameter `keys` must be a list.")
         key = ", ".join(keys)
         token = insttoken
     else:
-        prompt_key = "Please enter your API Key(s), obtained from "\
+        prompt_key = f"Please enter your API Key(s) for Scopus and SciVal, obtained from "\
                      "http://dev.elsevier.com/myapikey.html.  Separate "\
                      "multiple keys by comma:\n"
         key = input(prompt_key)
+
         prompt_token = "API Keys are sufficient for most users.  If you "\
-                       "have an InstToken, please enter the token now; "\
-                       "otherwise just press Enter:\n"
+                    f"have an InstToken for Scopus and SciVal, please enter the token now; "\
+                    "otherwise just press Enter:\n"
         token = input(prompt_token)
-    config.set('Authentication', 'APIKey', key)
+    config.set(section_name, 'APIKey', key)
+
     if token:
-        config.set('Authentication', 'InstToken', token)
+        config.set(section_name, 'InstToken', token)
 
     # Set default values
     config.add_section('Requests')

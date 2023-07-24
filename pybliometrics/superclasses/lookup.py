@@ -8,7 +8,9 @@ from pybliometrics.utils import get_folder, URLS
 
 class Lookup(Base):
     def __init__(self,
-                 api: Literal["AuthorLookup", "CountryLookup", "CountryGroupLookup", "InstitutionLookup", "InstitutionGroupLookup", "PublicationLookup", "ScopusSourceLookup", "SubjectAreaLookup", "TopicLookup", "TopicClusterLookup", "WorldLookup"],
+                 api: Literal["AuthorLookup", "CountryLookup", "CountryGroupLookup", "InstitutionLookup", 
+                              "InstitutionGroupLookup", "PublicationLookup", "ScopusSourceLookup", 
+                              "SubjectAreaLookup", "TopicLookup", "TopicClusterLookup", "WorldLookup"],
                  identifier: Union[int, str] = None,
                  complement: str = "",
                  **kwds: str
@@ -35,11 +37,12 @@ class Lookup(Base):
         # Construct URL and cache file name
         url = URLS[api] + complement
         if identifier != None:
-            url += "/" + identifier
+            stem = identifier.replace('/', '_')
 
-        self._view = "UniqueView"
-        self._cache_file_path = get_folder(api, self._view)
+        self._cache_file_path = get_folder(api, None)/stem
 
         # Parse file contents
-        params = {'view': self._view, **kwds}
+        params = {'authors': str(identifier),
+                  'metricTypes': "ScholarlyOutput",
+                  **kwds}
         Base.__init__(self, params=params, url=url, api=api)

@@ -1,5 +1,3 @@
-from pybliometrics.utils import *
-
 from pybliometrics.scival.author_lookup import *
 from pybliometrics.scival.country_lookup import *
 from pybliometrics.scival.institution_lookup import *

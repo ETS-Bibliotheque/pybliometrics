@@ -5,7 +5,7 @@ if sys.version_info >= (3, 8):
 else:
     from importlib_metadata import version
 
-__version__ = version("pybliometrics")
+__version__ = "pybliometrics" #version(
 
 __citation__ = 'Rose, Michael E. and John R. Kitchin: "pybliometrics: '\
     'Scriptable bibliometrics using a Python interface to Scopus", SoftwareX '\

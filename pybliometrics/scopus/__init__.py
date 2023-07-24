@@ -1,5 +1,3 @@
-from pybliometrics.utils import *
-
 from pybliometrics.scopus.abstract_citation import *
 from pybliometrics.scopus.abstract_retrieval import *
 from pybliometrics.scopus.affiliation_retrieval import *

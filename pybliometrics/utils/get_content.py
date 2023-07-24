@@ -102,7 +102,6 @@ def get_content(url, api, params=None, **kwds):
         except IndexError:  # All keys depleted
             break
     _throttling_params[api].append(time())
-
     # Eventually raise error, if possible with supplied error message
     try:
         error_type = errors[resp.status_code]
