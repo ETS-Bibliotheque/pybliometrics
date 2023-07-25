@@ -41,7 +41,7 @@ class Base:
         except ValueError:
             msg = "Parameter refresh needs to be numeric or boolean."
             raise ValueError(msg)
-        print(url, api, params, *args, **kwds)
+
         # Compare age of file to test whether we refresh
         self._refresh, mod_ts = _check_file_age(self)
 
