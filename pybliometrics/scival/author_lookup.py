@@ -7,6 +7,7 @@ import pandas as pd
 from json import loads
 
 from pybliometrics.superclasses import Lookup
+from pybliometrics.scopus import AuthorRetrieval
 from pybliometrics.utils import chained_get, check_parameter_value,\
     filter_digits, get_content, get_link, html_unescape, listify, make_int_if_possible,\
     parse_affiliation, parse_date_created, URLS
@@ -76,6 +77,19 @@ class AuthorLookup(Lookup):
         # Parse json
         self._results = self._json['results'][0]
         self._dataSource = self._json['dataSource']
+        # self._current_institution = AuthorRetrieval(self._id, refresh=self._refresh).affiliation_current
+        
+        # # Retrieve the id of the first institution from the list of current institutions
+        # self._default_current_institution_id = str(self._current_institution[0]).split("id=")[1].split(",")[0].strip()
+
+        # Définition de args avec les arguments, leur type et leur valeur par défaut
+        args_inst = (
+            ('institutionId', Union[str, int], 0),
+            ('yearRange', Literal['3yrs', '3yrsAndCurrent', '3yrsAndCurrentAndFuture', '5yrs', '5yrsAndCurrent', '5yrsAndCurrentAndFuture', '10yrs'], '5yrs'),
+            ('limit', int, 500),
+            ('offset', int, 0)
+        )
+
 
     def __str__(self) -> str:
         """Return a summary string."""
@@ -85,7 +99,8 @@ class AuthorLookup(Lookup):
             f"\t- ID: \t{self.id}"
         return s
     
-    def get_metrics(self, author_ids: str = '',
+    def get_metrics(self, 
+                    author_ids: str = '',
                     metricType: Literal['AcademicCorporateCollaboration', 'AcademicCorporateCollaborationImpact', 'Collaboration',
                                         'CitationCount', 'CitationsPerPublication', 'CollaborationImpact', 'CitedPublications',
                                         'FieldWeightedCitationImpact', 'ScholarlyOutput', 'PublicationsInTopJournalPercentiles', 
@@ -228,4 +243,33 @@ class AuthorLookup(Lookup):
             raise ValueError(f"Invalid collabType '{collabType}' for metricType '{metricType}'. "
                              f"Valid collabTypes are: {', '.join(valid_collab_types)}")
         
+    def get_institution_metrics(self,
+                                institutionId: Union[str, int],
+                                yearRange: Literal['3yrs', '3yrsAndCurrent', '3yrsAndCurrentAndFuture', '5yrs', '5yrsAndCurrent', 
+                                                   '5yrsAndCurrentAndFuture', '10yrs'] = '5yrs',
+                                limit: int = 500,
+                                offset: int = 0):
+        
+        # institutionId = self._default_current_institution_id if institutionId == 0 else str(institutionId)
+        limit = 1 if limit < 1 else (500 if limit > 500 else limit)
+
+        params = {
+            "yearRange": yearRange,
+            "limit": limit,
+            "offset": offset
+        }
+
+        response = get_content(url=URLS['AuthorLookup']+'institutionId/'+str(institutionId), api='AuthorLookup', params=params, **self.kwds)
+        data = response.json()
+        del data['link']
+        return data
+        
+    def institutional_authors(self, institutionId: Union[str, int], yearRange: Literal['3yrs', '3yrsAndCurrent', '3yrsAndCurrentAndFuture', '5yrs', '5yrsAndCurrent', 
+                                                                                        '5yrsAndCurrentAndFuture', '10yrs'] = '5yrs'):
+        return self.get_institution_metrics(institutionId=institutionId, yearRange=yearRange)['authors']
     
+    def institutional_total_count(self, institutionId: Union[str, int], yearRange: Literal['3yrs', '3yrsAndCurrent', '3yrsAndCurrentAndFuture', '5yrs', '5yrsAndCurrent', 
+                                                                                            '5yrsAndCurrentAndFuture', '10yrs'] = '5yrs'):
+        return self.get_institution_metrics(institutionId=institutionId, yearRange=yearRange)['totalCount']
+
+
