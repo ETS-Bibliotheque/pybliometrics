@@ -12,7 +12,18 @@ from pybliometrics.utils import chained_get, check_parameter_value,\
     filter_digits, get_content, get_link, html_unescape, listify, make_int_if_possible,\
     parse_affiliation, parse_date_created, URLS
 
+
 class AuthorLookup(Lookup):
+    # Class variables
+    yearRange_list = Literal['3yrs', '3yrsAndCurrent', '3yrsAndCurrentAndFuture', '5yrs', '5yrsAndCurrent', '5yrsAndCurrentAndFuture', '10yrs']
+    metricType_liste = Literal['AcademicCorporateCollaboration', 'AcademicCorporateCollaborationImpact', 'Collaboration',
+                                        'CitationCount', 'CitationsPerPublication', 'CollaborationImpact', 'CitedPublications',
+                                        'FieldWeightedCitationImpact', 'ScholarlyOutput', 'PublicationsInTopJournalPercentiles', 
+                                        'OutputsInTopCitationPercentiles']
+    includedDocs_list = Literal['AllPublicationTypes', 'ArticlesOnly', 'ArticlesReviews', 'ArticlesReviewsConferencePapers', 
+                                        'ArticlesReviewsConferencePapersBooksAndBookChapters', 'ConferencePapersOnly', 
+                                        'ArticlesConferencePapers', 'BooksAndBookChapters']
+
     @property
     def name(self):
         return chained_get(self._results, ['author', 'name'], 'Unknown')
@@ -82,14 +93,6 @@ class AuthorLookup(Lookup):
         # # Retrieve the id of the first institution from the list of current institutions
         # self._default_current_institution_id = str(self._current_institution[0]).split("id=")[1].split(",")[0].strip()
 
-        # Définition de args avec les arguments, leur type et leur valeur par défaut
-        args_inst = (
-            ('institutionId', Union[str, int], 0),
-            ('yearRange', Literal['3yrs', '3yrsAndCurrent', '3yrsAndCurrentAndFuture', '5yrs', '5yrsAndCurrent', '5yrsAndCurrentAndFuture', '10yrs'], '5yrs'),
-            ('limit', int, 500),
-            ('offset', int, 0)
-        )
-
 
     def __str__(self) -> str:
         """Return a summary string."""
@@ -101,18 +104,12 @@ class AuthorLookup(Lookup):
     
     def get_metrics(self, 
                     author_ids: str = '',
-                    metricType: Literal['AcademicCorporateCollaboration', 'AcademicCorporateCollaborationImpact', 'Collaboration',
-                                        'CitationCount', 'CitationsPerPublication', 'CollaborationImpact', 'CitedPublications',
-                                        'FieldWeightedCitationImpact', 'ScholarlyOutput', 'PublicationsInTopJournalPercentiles', 
-                                        'OutputsInTopCitationPercentiles'] = 'ScholarlyOutput',
-                    yearRange: Literal['3yrs', '3yrsAndCurrent', '3yrsAndCurrentAndFuture', '5yrs', '5yrsAndCurrent', 
-                                       '5yrsAndCurrentAndFuture', '10yrs'] = '5yrs',
+                    metricType: metricType_liste = 'ScholarlyOutput',
+                    yearRange: yearRange_list = '5yrs',
                     subjectAreaFilterURI: str = '',
                     includeSelfCitations: bool = True,
                     byYear: bool = True,
-                    includedDocs: Literal['AllPublicationTypes', 'ArticlesOnly', 'ArticlesReviews', 'ArticlesReviewsConferencePapers', 
-                                          'ArticlesReviewsConferencePapersBooksAndBookChapters', 'ConferencePapersOnly', 
-                                          'ArticlesConferencePapers', 'BooksAndBookChapters'] = 'AllPublicationTypes',
+                    includedDocs: includedDocs_list = 'CiteScore',
                     journalImpactType: Literal['CiteScore', 'SNIP', 'SJR'] = 'CiteScore',
                     showAsFieldWeighted: bool = False,
                     indexType: Literal['hIndex', 'h5Index', 'gIndex', 'mIndex'] = 'hIndex') -> any:
@@ -140,19 +137,14 @@ class AuthorLookup(Lookup):
 
     def get_metrics_DataFrame_Collaboration  (self, 
                 author_ids: str = '',
-                metricType: Literal['AcademicCorporateCollaboration', 'AcademicCorporateCollaborationImpact', 'Collaboration',
-                                    'CollaborationImpact'] = 'AcademicCorporateCollaboration',
-                collabType: Literal['Academic-corporate collaboration', 'No academic-corporate collaboration', 'Institutional collaboration',
-                                    'International collaboration', 'National collaboration', 'Single authorship'] = 'No academic-corporate collaboration',
+                metricType: metricType_liste = 'AcademicCorporateCollaboration',
+                collabType: Literal['Academic-corporate collaboration', 'No academic-corporate collaboration', 'Institutional collaboration', 'International collaboration', 'National collaboration', 'Single authorship'] = 'No academic-corporate collaboration',
                 value_or_percentage: Literal['valueByYear', 'percentageByYear'] = 'valueByYear',
-                yearRange: Literal['3yrs', '3yrsAndCurrent', '3yrsAndCurrentAndFuture', '5yrs', '5yrsAndCurrent', 
-                                    '5yrsAndCurrentAndFuture', '10yrs'] = '5yrs',
+                yearRange: yearRange_list = '5yrs',
                 subjectAreaFilterURI: str = '',
                 includeSelfCitations: bool = True,
                 byYear: bool = True,
-                includedDocs: Literal['AllPublicationTypes', 'ArticlesOnly', 'ArticlesReviews', 'ArticlesReviewsConferencePapers', 
-                                        'ArticlesReviewsConferencePapersBooksAndBookChapters', 'ConferencePapersOnly', 
-                                        'ArticlesConferencePapers', 'BooksAndBookChapters'] = 'AllPublicationTypes',
+                includedDocs: includedDocs_list = 'AllPublicationTypes',
                 journalImpactType: Literal['CiteScore', 'SNIP', 'SJR'] = 'CiteScore',
                 showAsFieldWeighted: bool = False,
                 indexType: Literal['hIndex', 'h5Index', 'gIndex', 'mIndex'] = 'hIndex'):
@@ -184,14 +176,11 @@ class AuthorLookup(Lookup):
                 metricType: Literal['PublicationsInTopJournalPercentiles', 'OutputsInTopCitationPercentiles'] = 'OutputsInTopCitationPercentiles',
                 threshold: Literal[1, 5, 10, 25] = 10,
                 value_or_percentage: Literal['valueByYear', 'percentageByYear'] = 'valueByYear',
-                yearRange: Literal['3yrs', '3yrsAndCurrent', '3yrsAndCurrentAndFuture', '5yrs', '5yrsAndCurrent', 
-                                    '5yrsAndCurrentAndFuture', '10yrs'] = '5yrs',
+                yearRange: yearRange_list = '5yrs',
                 subjectAreaFilterURI: str = '',
                 includeSelfCitations: bool = True,
                 byYear: bool = True,
-                includedDocs: Literal['AllPublicationTypes', 'ArticlesOnly', 'ArticlesReviews', 'ArticlesReviewsConferencePapers', 
-                                        'ArticlesReviewsConferencePapersBooksAndBookChapters', 'ConferencePapersOnly', 
-                                        'ArticlesConferencePapers', 'BooksAndBookChapters'] = 'AllPublicationTypes',
+                includedDocs: includedDocs_list = 'AllPublicationTypes',
                 journalImpactType: Literal['CiteScore', 'SNIP', 'SJR'] = 'CiteScore',
                 showAsFieldWeighted: bool = False,
                 indexType: Literal['hIndex', 'h5Index', 'gIndex', 'mIndex'] = 'hIndex'):
@@ -213,16 +202,12 @@ class AuthorLookup(Lookup):
     
     def get_metrics_DataFrame_Other  (self, 
                 author_ids: str = '',
-                metricType: Literal['CitationCount', 'CitationsPerPublication', 'CitedPublications',
-                                    'FieldWeightedCitationImpact', 'ScholarlyOutput'] = 'ScholarlyOutput',
-                yearRange: Literal['3yrs', '3yrsAndCurrent', '3yrsAndCurrentAndFuture', '5yrs', '5yrsAndCurrent', 
-                                    '5yrsAndCurrentAndFuture', '10yrs'] = '5yrs',
+                metricType: Literal['CitationCount', 'CitationsPerPublication', 'CitedPublications', 'FieldWeightedCitationImpact', 'ScholarlyOutput'] = 'ScholarlyOutput',
+                yearRange: yearRange_list = '5yrs',
                 subjectAreaFilterURI: str = '',
                 includeSelfCitations: bool = True,
                 byYear: bool = True,
-                includedDocs: Literal['AllPublicationTypes', 'ArticlesOnly', 'ArticlesReviews', 'ArticlesReviewsConferencePapers', 
-                                        'ArticlesReviewsConferencePapersBooksAndBookChapters', 'ConferencePapersOnly', 
-                                        'ArticlesConferencePapers', 'BooksAndBookChapters'] = 'AllPublicationTypes',
+                includedDocs: includedDocs_list = 'AllPublicationTypes',
                 journalImpactType: Literal['CiteScore', 'SNIP', 'SJR'] = 'CiteScore',
                 showAsFieldWeighted: bool = False,
                 indexType: Literal['hIndex', 'h5Index', 'gIndex', 'mIndex'] = 'hIndex'):
@@ -242,11 +227,10 @@ class AuthorLookup(Lookup):
         if collabType not in valid_collab_types:
             raise ValueError(f"Invalid collabType '{collabType}' for metricType '{metricType}'. "
                              f"Valid collabTypes are: {', '.join(valid_collab_types)}")
-        
+
     def get_institution_metrics(self,
                                 institutionId: Union[str, int],
-                                yearRange: Literal['3yrs', '3yrsAndCurrent', '3yrsAndCurrentAndFuture', '5yrs', '5yrsAndCurrent', 
-                                                   '5yrsAndCurrentAndFuture', '10yrs'] = '5yrs',
+                                yearRange: yearRange_list = '5yrs',
                                 limit: int = 500,
                                 offset: int = 0):
         
@@ -263,13 +247,13 @@ class AuthorLookup(Lookup):
         data = response.json()
         del data['link']
         return data
-        
-    def institutional_authors(self, institutionId: Union[str, int], yearRange: Literal['3yrs', '3yrsAndCurrent', '3yrsAndCurrentAndFuture', '5yrs', '5yrsAndCurrent', 
-                                                                                        '5yrsAndCurrentAndFuture', '10yrs'] = '5yrs'):
+    
+    
+
+    def institutional_authors(self, institutionId: Union[str, int], yearRange: yearRange_list = '5yrs'):
         return self.get_institution_metrics(institutionId=institutionId, yearRange=yearRange)['authors']
     
-    def institutional_total_count(self, institutionId: Union[str, int], yearRange: Literal['3yrs', '3yrsAndCurrent', '3yrsAndCurrentAndFuture', '5yrs', '5yrsAndCurrent', 
-                                                                                            '5yrsAndCurrentAndFuture', '10yrs'] = '5yrs'):
+    def institutional_total_count(self, institutionId: Union[str, int], yearRange: yearRange_list = '5yrs'):
         return self.get_institution_metrics(institutionId=institutionId, yearRange=yearRange)['totalCount']
 
 
