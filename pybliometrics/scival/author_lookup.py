@@ -16,13 +16,10 @@ from pybliometrics.utils import chained_get, check_parameter_value,\
 class AuthorLookup(Lookup):
     # Class variables
     yearRange_list = Literal['3yrs', '3yrsAndCurrent', '3yrsAndCurrentAndFuture', '5yrs', '5yrsAndCurrent', '5yrsAndCurrentAndFuture', '10yrs']
-    metricType_liste = Literal['AcademicCorporateCollaboration', 'AcademicCorporateCollaborationImpact', 'Collaboration',
-                                        'CitationCount', 'CitationsPerPublication', 'CollaborationImpact', 'CitedPublications',
-                                        'FieldWeightedCitationImpact', 'ScholarlyOutput', 'PublicationsInTopJournalPercentiles', 
-                                        'OutputsInTopCitationPercentiles']
-    includedDocs_list = Literal['AllPublicationTypes', 'ArticlesOnly', 'ArticlesReviews', 'ArticlesReviewsConferencePapers', 
-                                        'ArticlesReviewsConferencePapersBooksAndBookChapters', 'ConferencePapersOnly', 
-                                        'ArticlesConferencePapers', 'BooksAndBookChapters']
+    metricType_liste = Literal['AcademicCorporateCollaboration', 'AcademicCorporateCollaborationImpact', 'Collaboration','CitationCount', 'CitationsPerPublication', 'CollaborationImpact', 'CitedPublications','FieldWeightedCitationImpact', 'ScholarlyOutput', 'PublicationsInTopJournalPercentiles', 'OutputsInTopCitationPercentiles']
+    includedDocs_list = Literal['AllPublicationTypes', 'ArticlesOnly', 'ArticlesReviews', 'ArticlesReviewsConferencePapers', 'ArticlesReviewsConferencePapersBooksAndBookChapters', 'ConferencePapersOnly', 'ArticlesConferencePapers', 'BooksAndBookChapters']
+    journalImpactType_list = Literal['CiteScore', 'SNIP', 'SJR']
+    indexType_list = Literal['hIndex', 'h5Index', 'gIndex', 'mIndex']
 
     @property
     def name(self):
@@ -39,6 +36,7 @@ class AuthorLookup(Lookup):
     @property
     def dataSource(self):
         return [[key, value] for key, value in self._dataSource.items()]
+
 
     def __init__(self,
                  author_id: Union[int, str],
@@ -102,17 +100,18 @@ class AuthorLookup(Lookup):
             f"\t- ID: \t{self.id}"
         return s
     
-    def get_metrics(self, 
+
+    def get_rawdata(self, 
                     author_ids: str = '',
                     metricType: metricType_liste = 'ScholarlyOutput',
                     yearRange: yearRange_list = '5yrs',
                     subjectAreaFilterURI: str = '',
                     includeSelfCitations: bool = True,
                     byYear: bool = True,
-                    includedDocs: includedDocs_list = 'CiteScore',
-                    journalImpactType: Literal['CiteScore', 'SNIP', 'SJR'] = 'CiteScore',
+                    includedDocs: includedDocs_list = 'AllPublicationTypes',
+                    journalImpactType: journalImpactType_list = 'CiteScore',
                     showAsFieldWeighted: bool = False,
-                    indexType: Literal['hIndex', 'h5Index', 'gIndex', 'mIndex'] = 'hIndex') -> any:
+                    indexType: indexType_list = 'hIndex') -> any:
         
         author_ids = self._id if author_ids == '' else author_ids
 
@@ -134,21 +133,19 @@ class AuthorLookup(Lookup):
         last_key = list(data.keys())[-1]
         return data[last_key]
     
-
-    def get_metrics_DataFrame_Collaboration  (self, 
+    def get_metrics_Collaboration(self, 
                 author_ids: str = '',
-                metricType: metricType_liste = 'AcademicCorporateCollaboration',
+                metricType: Literal['AcademicCorporateCollaboration', 'AcademicCorporateCollaborationImpact', 'Collaboration', 'CollaborationImpact'] = 'AcademicCorporateCollaboration',
                 collabType: Literal['Academic-corporate collaboration', 'No academic-corporate collaboration', 'Institutional collaboration', 'International collaboration', 'National collaboration', 'Single authorship'] = 'No academic-corporate collaboration',
-                value_or_percentage: Literal['valueByYear', 'percentageByYear'] = 'valueByYear',
+                value_or_percentage: Literal['valueByYear', 'percentageByYear'] = 'valueByYear', 
                 yearRange: yearRange_list = '5yrs',
                 subjectAreaFilterURI: str = '',
                 includeSelfCitations: bool = True,
                 byYear: bool = True,
                 includedDocs: includedDocs_list = 'AllPublicationTypes',
-                journalImpactType: Literal['CiteScore', 'SNIP', 'SJR'] = 'CiteScore',
+                journalImpactType: journalImpactType_list = 'CiteScore',
                 showAsFieldWeighted: bool = False,
-                indexType: Literal['hIndex', 'h5Index', 'gIndex', 'mIndex'] = 'hIndex'):
-        
+                indexType: indexType_list = 'hIndex'):
         if metricType in ('AcademicCorporateCollaboration', 'AcademicCorporateCollaborationImpact'):
             self._check_args(collabType, metricType, ('Academic-corporate collaboration', 'No academic-corporate collaboration'))
         elif metricType in ('Collaboration', 'CollaborationImpact'):
@@ -156,22 +153,10 @@ class AuthorLookup(Lookup):
         if metricType in ('AcademicCorporateCollaborationImpact', 'CollaborationImpact'):
             value_or_percentage = 'valueByYear'
 
-        author_ids = self._id if author_ids == '' else author_ids
-
-        data = self.get_metrics(author_ids, metricType, yearRange, subjectAreaFilterURI, includeSelfCitations, byYear, 
-                                includedDocs, journalImpactType, showAsFieldWeighted, indexType)
-        
-        for item in data:
-            if item['collabType'] == collabType:
-                by_year = item[value_or_percentage]
-                break
-        column_name = 'Percentage' if value_or_percentage == 'percentageByYear' else 'Value'
-        df = pd.DataFrame.from_dict(by_year, orient='index', columns=[column_name])
-        df.index.name = 'Year'
-
-        return df
+        return Formatage(self._for_advanced_metrics(metricType,yearRange,subjectAreaFilterURI,includeSelfCitations,byYear,includedDocs,journalImpactType,showAsFieldWeighted,indexType,
+                                                    author_ids, 'collabType', collabType, value_or_percentage))
     
-    def get_metrics_DataFrame_Percentile  (self, 
+    def get_metrics_Percentile  (self, 
                 author_ids: str = '',
                 metricType: Literal['PublicationsInTopJournalPercentiles', 'OutputsInTopCitationPercentiles'] = 'OutputsInTopCitationPercentiles',
                 threshold: Literal[1, 5, 10, 25] = 10,
@@ -184,23 +169,10 @@ class AuthorLookup(Lookup):
                 journalImpactType: Literal['CiteScore', 'SNIP', 'SJR'] = 'CiteScore',
                 showAsFieldWeighted: bool = False,
                 indexType: Literal['hIndex', 'h5Index', 'gIndex', 'mIndex'] = 'hIndex'):
-
-        author_ids = self._id if author_ids == '' else author_ids
-
-        data = self.get_metrics(author_ids, metricType, yearRange, subjectAreaFilterURI, includeSelfCitations, byYear, 
-                                includedDocs, journalImpactType, showAsFieldWeighted, indexType)
-        
-        for item in data:
-            if item['threshold'] == threshold:
-                by_year = item[value_or_percentage]
-                break
-        column_name = 'Percentage' if value_or_percentage == 'percentageByYear' else 'Value'
-        df = pd.DataFrame.from_dict(by_year, orient='index', columns=[column_name])
-        df.index.name = 'Year'
-
-        return df
+        return Formatage(self._for_advanced_metrics(metricType,yearRange,subjectAreaFilterURI,includeSelfCitations,byYear,includedDocs,journalImpactType,showAsFieldWeighted,indexType,
+                                                    author_ids, 'threshold', threshold, value_or_percentage))
     
-    def get_metrics_DataFrame_Other  (self, 
+    def get_metrics_Other  (self, 
                 author_ids: str = '',
                 metricType: Literal['CitationCount', 'CitationsPerPublication', 'CitedPublications', 'FieldWeightedCitationImpact', 'ScholarlyOutput'] = 'ScholarlyOutput',
                 yearRange: yearRange_list = '5yrs',
@@ -211,22 +183,32 @@ class AuthorLookup(Lookup):
                 journalImpactType: Literal['CiteScore', 'SNIP', 'SJR'] = 'CiteScore',
                 showAsFieldWeighted: bool = False,
                 indexType: Literal['hIndex', 'h5Index', 'gIndex', 'mIndex'] = 'hIndex'):
-
-        author_ids = self._id if author_ids == '' else author_ids
-
-        data = self.get_metrics(author_ids, metricType, yearRange, subjectAreaFilterURI, includeSelfCitations, byYear, 
-                                includedDocs, journalImpactType, showAsFieldWeighted, indexType)
-        
-        df = pd.DataFrame.from_dict(data, orient='index', columns=['Values'])
-        df.index.name = 'Year'
-
-        return df
+        return Formatage({'valueByYear': self._for_advanced_metrics(metricType,yearRange,subjectAreaFilterURI,includeSelfCitations,byYear,includedDocs,journalImpactType,showAsFieldWeighted,indexType,
+                                                    author_ids)})
 
     
+
     def _check_args(self, collabType: tuple, metricType: str, valid_collab_types):
         if collabType not in valid_collab_types:
             raise ValueError(f"Invalid collabType '{collabType}' for metricType '{metricType}'. "
                              f"Valid collabTypes are: {', '.join(valid_collab_types)}")
+
+    def _for_advanced_metrics(self, metricType, yearRange, subjectAreaFilterURI, includeSelfCitations, byYear, includedDocs, journalImpactType, showAsFieldWeighted, indexType,
+                                author_ids: str, key_name: str = '', value: Union[int, str] = '', value_or_percentage: str = 'valueByYear'):
+        author_ids = self._id if author_ids == '' else author_ids
+        data_dict = self.get_rawdata(author_ids, metricType, yearRange, subjectAreaFilterURI, includeSelfCitations, byYear, includedDocs, journalImpactType, showAsFieldWeighted, indexType)
+        
+        result_dict = {}
+        if not key_name == '':
+            for data in data_dict:
+                collab_type = data[key_name]
+                if collab_type == value:
+                    result_dict[key_name] = collab_type
+                    result_dict[value_or_percentage] = data[value_or_percentage]
+        else:
+            result_dict = data_dict
+
+        return result_dict
 
     def get_institution_metrics(self,
                                 institutionId: Union[str, int],
@@ -248,7 +230,6 @@ class AuthorLookup(Lookup):
         del data['link']
         return data
     
-    
 
     def institutional_authors(self, institutionId: Union[str, int], yearRange: yearRange_list = '5yrs'):
         return self.get_institution_metrics(institutionId=institutionId, yearRange=yearRange)['authors']
@@ -257,3 +238,31 @@ class AuthorLookup(Lookup):
         return self.get_institution_metrics(institutionId=institutionId, yearRange=yearRange)['totalCount']
 
 
+
+class Formatage():
+    @property
+    def Raw(self):
+        return self._dict
+        
+    @property
+    def Dictionary(self):
+        return self._dict[list(self._dict.keys())[-1]]
+
+    @property
+    def DataFrame(self):
+        data_type = list(self._dict.keys())[-1]
+        column_name = 'Percentage' if data_type == 'percentageByYear' else 'Value'
+        df = pd.DataFrame.from_dict(self._dict[data_type], orient='index', columns=[column_name])
+        df.index.name = 'Year'
+        return df
+
+    @property
+    def List(self):
+        data_type = list(self._dict.keys())[-1]
+        return [[int(cle) for cle in self._dict[data_type].keys()], list(self._dict[data_type].values())]
+    
+
+    def __init__(self, data: dict) -> None:
+        self._dict = data
+
+    
