@@ -1,6 +1,6 @@
 from collections import namedtuple
 from warnings import warn
-from typing import List, NamedTuple, Optional, Tuple, Union, Literal
+from typing import Any, List, NamedTuple, Optional, Tuple, Union, Literal
 
 import pandas as pd
 
@@ -8,9 +8,7 @@ from json import loads
 
 from pybliometrics.superclasses import Lookup
 from pybliometrics.scopus import AuthorRetrieval
-from pybliometrics.utils import chained_get, check_parameter_value,\
-    filter_digits, get_content, get_link, html_unescape, listify, make_int_if_possible,\
-    parse_affiliation, parse_date_created, URLS
+from pybliometrics.utils import chained_get, get_content, URLS
 
 
 class AuthorLookup(Lookup):
@@ -101,7 +99,7 @@ class AuthorLookup(Lookup):
         return s
     
 
-    def get_rawdata(self, 
+    def _get_metrics_rawdata(self, 
                     author_ids: str = '',
                     metricType: metricType_liste = 'ScholarlyOutput',
                     yearRange: yearRange_list = '5yrs',
@@ -153,7 +151,7 @@ class AuthorLookup(Lookup):
         if metricType in ('AcademicCorporateCollaborationImpact', 'CollaborationImpact'):
             value_or_percentage = 'valueByYear'
 
-        return Formatage(self._for_advanced_metrics(metricType,yearRange,subjectAreaFilterURI,includeSelfCitations,byYear,includedDocs,journalImpactType,showAsFieldWeighted,indexType,
+        return MetricsFormatage(self._for_advanced_metrics(metricType,yearRange,subjectAreaFilterURI,includeSelfCitations,byYear,includedDocs,journalImpactType,showAsFieldWeighted,indexType,
                                                     author_ids, 'collabType', collabType, value_or_percentage))
     
     def get_metrics_Percentile  (self, 
@@ -169,7 +167,7 @@ class AuthorLookup(Lookup):
                 journalImpactType: Literal['CiteScore', 'SNIP', 'SJR'] = 'CiteScore',
                 showAsFieldWeighted: bool = False,
                 indexType: Literal['hIndex', 'h5Index', 'gIndex', 'mIndex'] = 'hIndex'):
-        return Formatage(self._for_advanced_metrics(metricType,yearRange,subjectAreaFilterURI,includeSelfCitations,byYear,includedDocs,journalImpactType,showAsFieldWeighted,indexType,
+        return MetricsFormatage(self._for_advanced_metrics(metricType,yearRange,subjectAreaFilterURI,includeSelfCitations,byYear,includedDocs,journalImpactType,showAsFieldWeighted,indexType,
                                                     author_ids, 'threshold', threshold, value_or_percentage))
     
     def get_metrics_Other  (self, 
@@ -183,34 +181,11 @@ class AuthorLookup(Lookup):
                 journalImpactType: Literal['CiteScore', 'SNIP', 'SJR'] = 'CiteScore',
                 showAsFieldWeighted: bool = False,
                 indexType: Literal['hIndex', 'h5Index', 'gIndex', 'mIndex'] = 'hIndex'):
-        return Formatage({'valueByYear': self._for_advanced_metrics(metricType,yearRange,subjectAreaFilterURI,includeSelfCitations,byYear,includedDocs,journalImpactType,showAsFieldWeighted,indexType,
+        return MetricsFormatage({'valueByYear': self._for_advanced_metrics(metricType,yearRange,subjectAreaFilterURI,includeSelfCitations,byYear,includedDocs,journalImpactType,showAsFieldWeighted,indexType,
                                                     author_ids)})
 
-    
 
-    def _check_args(self, collabType: tuple, metricType: str, valid_collab_types):
-        if collabType not in valid_collab_types:
-            raise ValueError(f"Invalid collabType '{collabType}' for metricType '{metricType}'. "
-                             f"Valid collabTypes are: {', '.join(valid_collab_types)}")
-
-    def _for_advanced_metrics(self, metricType, yearRange, subjectAreaFilterURI, includeSelfCitations, byYear, includedDocs, journalImpactType, showAsFieldWeighted, indexType,
-                                author_ids: str, key_name: str = '', value: Union[int, str] = '', value_or_percentage: str = 'valueByYear'):
-        author_ids = self._id if author_ids == '' else author_ids
-        data_dict = self.get_rawdata(author_ids, metricType, yearRange, subjectAreaFilterURI, includeSelfCitations, byYear, includedDocs, journalImpactType, showAsFieldWeighted, indexType)
-        
-        result_dict = {}
-        if not key_name == '':
-            for data in data_dict:
-                collab_type = data[key_name]
-                if collab_type == value:
-                    result_dict[key_name] = collab_type
-                    result_dict[value_or_percentage] = data[value_or_percentage]
-        else:
-            result_dict = data_dict
-
-        return result_dict
-
-    def get_institution_metrics(self,
+    def _get_institution_rawdata(self,
                                 institutionId: Union[str, int],
                                 yearRange: yearRange_list = '5yrs',
                                 limit: int = 500,
@@ -229,17 +204,46 @@ class AuthorLookup(Lookup):
         data = response.json()
         del data['link']
         return data
-    
 
     def institutional_authors(self, institutionId: Union[str, int], yearRange: yearRange_list = '5yrs'):
-        return self.get_institution_metrics(institutionId=institutionId, yearRange=yearRange)['authors']
+        data_list = self._get_institution_rawdata(institutionId=institutionId, yearRange=yearRange)['authors']
+        result_dict = {item.get('id'): item for item in data_list if item.get('id') is not None}
+        for item in result_dict.values():
+            item.pop('link', None)
+            item.pop('uri', None)
+            item.pop('id', None)
+        return InstitutionalFormatage(result_dict)
     
     def institutional_total_count(self, institutionId: Union[str, int], yearRange: yearRange_list = '5yrs'):
-        return self.get_institution_metrics(institutionId=institutionId, yearRange=yearRange)['totalCount']
+        return self._get_institution_rawdata(institutionId=institutionId, yearRange=yearRange)['totalCount']
 
 
 
-class Formatage():
+    def _check_args(self, collabType: tuple, metricType: str, valid_collab_types):
+        if collabType not in valid_collab_types:
+            raise ValueError(f"Invalid collabType '{collabType}' for metricType '{metricType}'. "
+                             f"Valid collabTypes are: {', '.join(valid_collab_types)}")
+
+    def _for_advanced_metrics(self, metricType, yearRange, subjectAreaFilterURI, includeSelfCitations, byYear, includedDocs, journalImpactType, showAsFieldWeighted, indexType,
+                                author_ids: str, key_name: str = '', value: Union[int, str] = '', value_or_percentage: str = 'valueByYear'):
+        author_ids = self._id if author_ids == '' else author_ids
+        data_dict = self._get_metrics_rawdata(author_ids, metricType, yearRange, subjectAreaFilterURI, includeSelfCitations, byYear, includedDocs, journalImpactType, showAsFieldWeighted, indexType)
+        
+        result_dict = {}
+        if not key_name == '':
+            for data in data_dict:
+                collab_type = data[key_name]
+                if collab_type == value:
+                    result_dict[key_name] = collab_type
+                    result_dict[value_or_percentage] = data[value_or_percentage]
+        else:
+            result_dict = data_dict
+
+        return result_dict
+
+
+
+class MetricsFormatage():
     @property
     def Raw(self):
         return self._dict
@@ -265,4 +269,33 @@ class Formatage():
     def __init__(self, data: dict) -> None:
         self._dict = data
 
+    def __repr__(self):
+        return str("You must select a property: 'Raw', 'List', 'Dictionary', 'DataFrame' after calling the AuthorLookup class method!")    
+    
+
+class InstitutionalFormatage():  
+    @property
+    def Dictionary(self):
+        return self._dict
+    
+    @property
+    def List(self):
+        data_list = list(self._dict.values())
+        names = [item.get('name', '') for item in data_list]
+        ids = [item.get('id', '') for item in data_list]
+        scholarly_outputs = [item.get('scholarlyOutput', '') for item in data_list]
+        return [ids, names, scholarly_outputs]
+    
+    @property
+    def DataFrame(self):
+        df = pd.DataFrame.from_dict(self._dict, orient='index')
+        df.index.name = 'ID'
+        return df
+
+
+    def __init__(self, data: dict) -> None:
+        self._dict = data
+
+    def __repr__(self):
+        return str("You must select a property: 'List', 'Dictionary', 'DataFrame' after calling the AuthorLookup class method!")
     
