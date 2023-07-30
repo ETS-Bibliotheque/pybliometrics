@@ -42,7 +42,14 @@ class Lookup(Base):
         self._cache_file_path = get_folder(api, None)/stem
 
         # Parse file contents
-        params = {'authors': str(identifier),
-                  'metricTypes': "ScholarlyOutput",
-                  **kwds}
-        Base.__init__(self, params=params, url=url, api=api)
+        match api:
+            case "AuthorLookup":
+                params = {'authors': str(identifier),
+                          'metricTypes': "ScholarlyOutput",
+                          **kwds}
+                Base.__init__(self, params=params, url=url, api=api)
+
+            case "CountryLookup":
+                params = {'query':'name('+identifier+')',
+                          **kwds}
+                Base.__init__(self, params=params, url=url, api=api, not_query=True)

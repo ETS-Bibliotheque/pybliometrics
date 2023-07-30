@@ -100,9 +100,9 @@ class AuthorLookup(Lookup):
     
 
     def _get_metrics_rawdata(self, 
-                    author_ids: str = '',
                     metricType: metricType_liste = 'ScholarlyOutput',
                     yearRange: yearRange_list = '5yrs',
+                    author_ids: str = '',
                     subjectAreaFilterURI: str = '',
                     includeSelfCitations: bool = True,
                     byYear: bool = True,
@@ -132,11 +132,11 @@ class AuthorLookup(Lookup):
         return data[last_key]
     
     def get_metrics_Collaboration(self, 
-                author_ids: str = '',
                 metricType: Literal['AcademicCorporateCollaboration', 'AcademicCorporateCollaborationImpact', 'Collaboration', 'CollaborationImpact'] = 'AcademicCorporateCollaboration',
                 collabType: Literal['Academic-corporate collaboration', 'No academic-corporate collaboration', 'Institutional collaboration', 'International collaboration', 'National collaboration', 'Single authorship'] = 'No academic-corporate collaboration',
                 value_or_percentage: Literal['valueByYear', 'percentageByYear'] = 'valueByYear', 
                 yearRange: yearRange_list = '5yrs',
+                author_ids: str = '',
                 subjectAreaFilterURI: str = '',
                 includeSelfCitations: bool = True,
                 byYear: bool = True,
@@ -155,11 +155,11 @@ class AuthorLookup(Lookup):
                                                     author_ids, 'collabType', collabType, value_or_percentage))
     
     def get_metrics_Percentile  (self, 
-                author_ids: str = '',
                 metricType: Literal['PublicationsInTopJournalPercentiles', 'OutputsInTopCitationPercentiles'] = 'OutputsInTopCitationPercentiles',
                 threshold: Literal[1, 5, 10, 25] = 10,
                 value_or_percentage: Literal['valueByYear', 'percentageByYear'] = 'valueByYear',
                 yearRange: yearRange_list = '5yrs',
+                author_ids: str = '',
                 subjectAreaFilterURI: str = '',
                 includeSelfCitations: bool = True,
                 byYear: bool = True,
@@ -171,9 +171,9 @@ class AuthorLookup(Lookup):
                                                     author_ids, 'threshold', threshold, value_or_percentage))
     
     def get_metrics_Other  (self, 
-                author_ids: str = '',
                 metricType: Literal['CitationCount', 'CitationsPerPublication', 'CitedPublications', 'FieldWeightedCitationImpact', 'ScholarlyOutput'] = 'ScholarlyOutput',
                 yearRange: yearRange_list = '5yrs',
+                author_ids: str = '',
                 subjectAreaFilterURI: str = '',
                 includeSelfCitations: bool = True,
                 byYear: bool = True,

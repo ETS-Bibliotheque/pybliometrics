@@ -17,6 +17,7 @@ class Base:
                  api: str,
                  download: bool = True,
                  verbose: bool = False,
+                 not_query: bool = False,
                  *args: str, **kwds: str
                  ) -> None:
         """Class intended as base class for superclasses.
@@ -47,7 +48,7 @@ class Base:
 
         # Read or download, possibly with caching
         fname = self._cache_file_path
-        search_request = "query" in params
+        search_request = ("query" in params) and not not_query
         if fname.exists() and not self._refresh:
             self._mdate = mod_ts
             if search_request:
